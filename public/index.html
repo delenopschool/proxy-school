@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - School Proxy</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+      background: linear-gradient(to right, #ff6f61, #de2d26);
+      color: white;
+    }
+    h1 {
+      color: #ffef96;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      max-width: 600px;
+      border: 2px solid #ffef96;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #333;
+    }
+    input[type="submit"] {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>URL Proxy</h1>
+  <form id="proxyForm">
+    <input type="text" id="proxyInput" placeholder="Voer een URL of zoekopdracht in">
+    <input type="submit" value="Ga">
+  </form>
+  <script>
+    document.getElementById('proxyForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const input = document.getElementById('proxyInput').value.trim();
+      const urlPattern = new RegExp('^(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})([/\\w .-]*)*/?$');
+      if (urlPattern.test(input)) {
+        const targetUrl = new URL(input.startsWith('http') ? input : `http://${input}`);
+        window.location.href = `/proxy?url=${encodeURIComponent(targetUrl.href)}`;
+      } else {
+        window.location.href = `/search?q=${encodeURIComponent(input)}`;
+      }
+    });
+  </script>
+</body>
+</html>

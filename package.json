@@ -1,0 +1,23 @@
+{
+  "name": "proxy-search-engine",
+  "version": "1.0.0",
+  "description": "Een eenvoudige proxy zoekmachine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "colorjoe": "^4.2.0",
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^1.3.1",
+    "path": "^0.12.7",
+    "redbird": "^1.0.2",
+    "url": "^0.11.4"
+  },
+  "engines": {
+    "node": "14.x"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

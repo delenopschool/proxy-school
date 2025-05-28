@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kleurkiezer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f4f4f4;
+            height: 100vh;
+        }
+        .color-picker {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+        }
+        .color-palette {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red),
+                        linear-gradient(to top, black, rgba(0, 0, 0, 0), white);
+            background-blend-mode: multiply;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: crosshair;
+            margin-bottom: 15px;
+        }
+        .marker {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid black;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+        .slider-container {
+            margin-top: 10px;
+            text-align: left;
+        }
+        .slider-label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+            color: #555;
+        }
+        .slider {
+            width: 100%;
+        }
+        .color-preview {
+            margin: 20px auto;
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .details {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .details p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="color-picker">
+        <div class="color-palette" id="colorPalette">
+            <div class="marker" id="marker" style="left: 50%; top: 50%;"></div>
+        </div>
+        
+        <!-- Verzadigingsbalk -->
+        <div class="slider-container">
+            <label for="saturation" class="slider-label">Verzadiging</label>
+            <input type="range" id="saturation" class="slider" min="0" max="100" value="100">
+        </div>
+
+        <!-- Doorzichtigheidsbalk -->
+        <div class="slider-container">
+            <label for="alpha" class="slider-label">Doorzichtigheid</label>
+            <input type="range" id="alpha" class="slider" min="0" max="100" value="100">
+        </div>
+
+        <div class="color-preview" id="colorPreview"></div>
+        <div class="details" id="colorDetails">
+            <p><strong>HEX:</strong> #808080</p>
+            <p><strong>RGB:</strong> 128, 128, 128</p>
+            <p><strong>CMYK:</strong> 0%, 0%, 0%, 50%</p>
+            <p><strong>HSV:</strong> 0°, 0%, 50%</p>
+            <p><strong>HSL:</strong> 0°, 0%, 50%</p>
+            <p><strong>Alpha:</strong> 100%</p>
+        </div>
+    </div>
+
+    <script>
+    const colorPalette = document.getElementById("colorPalette");
+    const marker = document.getElementById("marker");
+    const saturationSlider = document.getElementById("saturation");
+    const alphaSlider = document.getElementById("alpha");
+    const colorPreview = document.getElementById("colorPreview");
+    const colorDetails = document.getElementById("colorDetails");
+    const colorInput = document.createElement("input");
+
+    // Voeg een invoerveld toe voor HEX-kleuren
+    colorInput.type = "text";
+    colorInput.placeholder = "Voer HEX-kleur in (#RRGGBB)";
+    colorInput.style.marginTop = "10px";
+    colorInput.style.width = "100%";
+    colorInput.style.height = "30px";
+    colorInput.style.border = "1px solid #ccc";
+    colorInput.style.borderRadius = "5px";
+    colorInput.style.padding = "5px";
+    colorInput.style.fontSize = "14px";
+    document.querySelector(".color-picker").appendChild(colorInput);
+
+    let currentColor = { r: 128, g: 128, b: 128, a: 1, s: 1 };
+
+    function getColorFromPosition(event) {
+        const rect = colorPalette.getBoundingClientRect();
+        let x = event.clientX - rect.left;
+        let y = event.clientY - rect.top;
+
+        x = Math.max(0, Math.min(x, rect.width));
+        y = Math.max(0, Math.min(y, rect.height));
+
+        const width = rect.width;
+        const height = rect.height;
+
+        const ctx = document.createElement("canvas").getContext("2d");
+        ctx.canvas.width = width;
+        ctx.canvas.height = height;
+
+        const gradient1 = ctx.createLinearGradient(0, 0, width, 0);
+        gradient1.addColorStop(0, "red");
+        gradient1.addColorStop(0.17, "yellow");
+        gradient1.addColorStop(0.34, "lime");
+        gradient1.addColorStop(0.51, "cyan");
+        gradient1.addColorStop(0.68, "blue");
+        gradient1.addColorStop(0.85, "magenta");
+        gradient1.addColorStop(1, "red");
+
+        const gradient2 = ctx.createLinearGradient(0, height, 0, 0);
+        gradient2.addColorStop(0, "black");
+        gradient2.addColorStop(0.5, "rgba(0,0,0,0)");
+        gradient2.addColorStop(1, "white");
+
+        ctx.fillStyle = gradient1;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = gradient2;
+        ctx.fillRect(0, 0, width, height);
+
+        const imageData = ctx.getImageData(x, y, 1, 1).data;
+        return { r: imageData[0], g: imageData[1], b: imageData[2] };
+    }
+
+    function rgbToHex(r, g, b) {
+        const toHex = (value) => value.toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    function hexToRgb(hex) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return { r, g, b };
+    }
+
+    function rgbToCmyk({ r, g, b }) {
+        const rNorm = r / 255;
+        const gNorm = g / 255;
+        const bNorm = b / 255;
+        const k = 1 - Math.max(rNorm, gNorm, bNorm);
+        const c = ((1 - rNorm - k) / (1 - k) || 0) * 100;
+        const m = ((1 - gNorm - k) / (1 - k) || 0) * 100;
+        const y = ((1 - bNorm - k) / (1 - k) || 0) * 100;
+        return { c: Math.round(c), m: Math.round(m), y: Math.round(y), k: Math.round(k * 100) };
+    }
+
+    function rgbToHsv({ r, g, b }) {
+        const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+        const max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+        const diff = max - min;
+        const h = diff === 0 ? 0
+            : max === rNorm ? (60 * ((gNorm - bNorm) / diff) + 360) % 360
+            : max === gNorm ? (60 * ((bNorm - rNorm) / diff) + 120)
+            : (60 * ((rNorm - gNorm) / diff) + 240);
+        const s = max === 0 ? 0 : (diff / max) * 100;
+        const v = max * 100;
+        return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
+    }
+
+    function rgbToHsl({ r, g, b }) {
+        const rNorm = r / 255, gNorm = g / 255, bNorm = b / 255;
+        const max = Math.max(rNorm, gNorm, bNorm), min = Math.min(rNorm, gNorm, bNorm);
+        const diff = max - min;
+        const h = diff === 0 ? 0
+            : max === rNorm ? (60 * ((gNorm - bNorm) / diff) + 360) % 360
+            : max === gNorm ? (60 * ((bNorm - rNorm) / diff) + 120)
+            : (60 * ((rNorm - gNorm) / diff) + 240);
+        const l = (max + min) / 2;
+        const s = diff === 0 ? 0 : (diff / (1 - Math.abs(2 * l - 1))) * 100;
+        return { h: Math.round(h), s: Math.round(s), l: Math.round(l * 100) };
+    }
+
+    function updateColor(event) {
+        const rect = colorPalette.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        marker.style.left = `${x}px`;
+        marker.style.top = `${y}px`;
+
+        const { r, g, b } = getColorFromPosition(event);
+        currentColor = { ...currentColor, r, g, b };
+
+        applyAdjustments();
+    }
+
+    function applyAdjustments() {
+        const { r, g, b } = currentColor;
+        const s = saturationSlider.value / 100;
+        const a = alphaSlider.value / 100;
+
+        const adjustedR = Math.round(r * s);
+        const adjustedG = Math.round(g * s);
+        const adjustedB = Math.round(b * s);
+
+        const hex = rgbToHex(adjustedR, adjustedG, adjustedB);
+        const cmyk = rgbToCmyk({ r: adjustedR, g: adjustedG, b: adjustedB });
+        const hsv = rgbToHsv({ r: adjustedR, g: adjustedG, b: adjustedB });
+        const hsl = rgbToHsl({ r: adjustedR, g: adjustedG, b: adjustedB });
+        const rgbaColor = `rgba(${adjustedR}, ${adjustedG}, ${adjustedB}, ${a})`;
+
+        colorPreview.style.backgroundColor = rgbaColor;
+        marker.style.backgroundColor = rgbaColor;
+
+        colorDetails.innerHTML = `
+            <p><strong>HEX:</strong> ${hex}</p>
+            <p><strong>RGB:</strong> ${adjustedR}, ${adjustedG}, ${adjustedB}</p>
+            <p><strong>CMYK:</strong> ${cmyk.c}%, ${cmyk.m}%, ${cmyk.y}%, ${cmyk.k}%</p>
+            <p><strong>HSV:</strong> ${hsv.h}°, ${hsv.s}%, ${hsv.v}%</p>
+            <p><strong>HSL:</strong> ${hsl.h}°, ${hsl.s}%, ${hsl.l}%</p>
+            <p><strong>Alpha:</strong> ${Math.round(a * 100)}%</p>
+        `;
+    }
+
+    function updateFromHexInput() {
+        const hex = colorInput.value.trim();
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+            const { r, g, b } = hexToRgb(hex);
+            currentColor = { ...currentColor, r, g, b };
+            applyAdjustments();
+        } else {
+            alert("Voer een geldige HEX-kleur in (#RRGGBB)");
+        }
+    }
+
+    colorPalette.addEventListener("mousedown", (event) => updateColor(event));
+    saturationSlider.add    
+    colorInput.addEventListener("change", updateFromHexInput);
+
+    window.addEventListener("mouseup", () => {
+        isDragging = false;
+    });
+
+    colorPalette.addEventListener("mousedown", (event) => {
+        isDragging = true;
+        updateColor(event);
+    });
+
+    colorPalette.addEventListener("mousemove", (event) => {
+        if (isDragging) {
+            updateColor(event);
+        }
+    });
+</script>
+</body>
+</html>

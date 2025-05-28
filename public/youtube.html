@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Unblocker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      max-width: 600px;
+    }
+    input[type="submit"] {
+      padding: 10px 20px;
+    }
+    iframe {
+      margin-top: 20px;
+      width: 80%;
+      height: 400px;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <h1>YouTube Unblocker</h1><h2>
+  Is YouTube Blocked by your administrator? use this tool to still watch <a style="color: red;">any</a> video!
+  </h2>
+  <form id="youtubeForm">
+    <input type="text" id="youtubeUrl" placeholder="Enter a YouTube URL">
+    <input type="submit" value="Watch Video">
+  </form>
+  <div id="videoContainer"></div>
+  <script>
+    document.getElementById('youtubeForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const youtubeUrl = document.getElementById('youtubeUrl').value;
+      const videoId = youtubeUrl.split('v=')[1];
+      if (videoId) {
+        const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+        document.getElementById('videoContainer').innerHTML = `<iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      } else {
+        alert('Ongeldige YouTube URL');
+      }
+    });
+  </script>
+</body>
+</html>
