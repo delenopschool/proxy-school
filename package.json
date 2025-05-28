@@ -15,7 +15,7 @@
     "url": "^0.11.4"
   },
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "keywords": [],
   "author": "",
