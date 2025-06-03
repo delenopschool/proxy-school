@@ -16,45 +16,42 @@ app.use((req, res, next) => {
 // Middleware om statische bestanden te serveren vanuit de public map
 app.use(express.static(path.join(__dirname, 'public')));
 
-// **Zoekopdrachten correct doorsturen naar Bing**
+// **Zoekopdrachten via Ecosia**
 app.get('/search', (req, res) => {
   const query = req.query.q;
   if (query) {
-    res.redirect(`https://www.bing.com/search?q=${encodeURIComponent(query)}`);
+    res.redirect(`https://www.ecosia.org/search?q=${encodeURIComponent(query)}`);
   } else {
     res.status(400).send('Bad Request: No search query provided');
   }
 });
 
 // **Proxy voor ALLE URL's**
-app.use(
-  '*',
-  (req, res, next) => {
-    try {
-      let targetUrl = req.originalUrl.slice(1); // Verwijder het eerste '/'-teken
-      if (!targetUrl.startsWith('http')) {
-        targetUrl = `http://${targetUrl}`; // Voeg 'http://' toe als het niet aanwezig is
-      }
-
-      // Valideer de URL
-      const parsedUrl = new URL(targetUrl);
-
-      // **Fix voor foutieve host resolutie (ENOTFOUND)**
-      createProxyMiddleware({
-        target: parsedUrl.origin, // Zorgt ervoor dat alleen de correcte host wordt gebruikt
-        changeOrigin: true,
-        pathRewrite: { [`^/${parsedUrl.host}`]: '' }, // Verwijder hostnaam uit het pad
-        onError: (err, req, res) => {
-          console.error('Proxy error:', err.message);
-          res.status(500).send('Proxy error: ' + err.message);
-        }
-      })(req, res, next);
-    } catch (err) {
-      console.error('Invalid URL:', err.message);
-      res.status(400).send('Bad Request: Invalid URL');
-    }
+app.use('/proxy', (req, res, next) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).send('Bad Request: No URL provided');
   }
-);
+
+  try {
+    // Valideer en parse de URL
+    const parsedUrl = new URL(targetUrl);
+
+    // Voer de proxy correct uit
+    createProxyMiddleware({
+      target: parsedUrl.origin, // Gebruik de volledige host
+      changeOrigin: true,
+      pathRewrite: { '^/proxy': '' }, // Zorgt ervoor dat het pad niet wordt aangepast
+      onError: (err, req, res) => {
+        console.error('Proxy error:', err.message);
+        res.status(500).send('Proxy error: ' + err.message);
+      }
+    })(req, res, next);
+  } catch (err) {
+    console.error('Invalid URL:', err.message);
+    res.status(400).send('Bad Request: Invalid URL');
+  }
+});
 
 // Route om de hoofdpagina te serveren
 app.get('/', (req, res) => {
