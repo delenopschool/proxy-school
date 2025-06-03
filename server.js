@@ -16,12 +16,21 @@ app.use((req, res, next) => {
 // Middleware om statische bestanden te serveren vanuit de public map
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Dynamische proxy voor ALLE URL's
+// **Zoekopdrachten correct doorsturen naar Bing**
+app.get('/search', (req, res) => {
+  const query = req.query.q;
+  if (query) {
+    res.redirect(`https://www.bing.com/search?q=${encodeURIComponent(query)}`);
+  } else {
+    res.status(400).send('Bad Request: No search query provided');
+  }
+});
+
+// **Proxy voor ALLE URL's**
 app.use(
   '*',
   (req, res, next) => {
     try {
-      // Haal de URL op van het pad
       let targetUrl = req.originalUrl.slice(1); // Verwijder het eerste '/'-teken
       if (!targetUrl.startsWith('http')) {
         targetUrl = `http://${targetUrl}`; // Voeg 'http://' toe als het niet aanwezig is
@@ -30,11 +39,11 @@ app.use(
       // Valideer de URL
       const parsedUrl = new URL(targetUrl);
 
-      // Creëer een directe proxy voor de doelhost
+      // **Fix voor foutieve host resolutie (ENOTFOUND)**
       createProxyMiddleware({
-        target: `${parsedUrl.protocol}//${parsedUrl.host}`,
+        target: parsedUrl.origin, // Zorgt ervoor dat alleen de correcte host wordt gebruikt
         changeOrigin: true,
-        pathRewrite: (path) => parsedUrl.pathname || '/', // Houd paden intact of ga naar de homepagina
+        pathRewrite: { [`^/${parsedUrl.host}`]: '' }, // Verwijder hostnaam uit het pad
         onError: (err, req, res) => {
           console.error('Proxy error:', err.message);
           res.status(500).send('Proxy error: ' + err.message);
